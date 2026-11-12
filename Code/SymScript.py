@@ -79,19 +79,20 @@ def make_Block_domain():
         preconds=(
             ('block', ('?b',)),
             ('block', ('?d',)),
-            ('clear', ('?b')),
-            ('clear', ('?d')),
+            ('clear', ('?b',)),
+            ('clear', ('?d',)),
+            ('on', ('?b', 'table'))
         ),
         add_effects=(
-            ('on', ('?b', '?d'))
+            ('on', ('?b', '?d')),
         ),
         del_effects=(
             ('on', ('?b', 'table')),
-            ('clear', ('?d')),
+            ('clear', ('?d',)),
         )
     )
 
-    return [move_to_table]
+    return [move_to_table, move_to_block]
 
 def make_Room_problem():
 
@@ -142,8 +143,32 @@ def make_Block_problem():
 
 def make_Block2_problem():
     # TODO 1.4: Write out the initial and goal states for the problem illustrated in the handout.
-    init = {}
-    goal = {}
+    init = {
+        # static facts
+        ('block', ('a',)),
+        ('block', ('b',)),
+        ('block', ('c',)),
+        ('block', ('d',)),
+        ('block', ('e',)),
+        ('block', ('f',)),
+        # initial state
+        ('on', ('c', 'table')),
+        ('on', ('b', 'c')),
+        ('on', ('a', 'b')),
+        ('on', ('f', 'table')),
+        ('on', ('d', 'f')),
+        ('on', ('e', 'd')),
+        ('clear', ('a',)),
+        ('clear', ('e',)),
+    }
+    goal = {
+        ('on', ('a', 'table')),
+        ('on', ('d', 'a')),
+        ('on', ('c', 'd')),
+        ('on', ('f', 'table')),
+        ('on', ('b', 'f')),
+        ('on', ('e', 'b')),
+    }
     return init, goal
 
 
@@ -161,5 +186,25 @@ if __name__ == "__main__":
             print(f"{step:02d}. {act.label()}")
 
     # TODO 1.3: Solve the Block problem using make_Block_domain() and sp.Planner().
+    print('-----------------------------------------------------------------------')
+    planner = sp.Planner(make_Block_domain())
+    init, goal = make_Block_problem()
+    plan = planner.plan(init, goal)  # <-- TODO 1.2: Implement in SymPlanner.py
+    if plan is None:
+        print("No plan found.")
+    else:
+        print("Plan:")
+        for step, act in enumerate(plan, 1):
+            print(f"{step:02d}. {act.label()}")
 
     # TODO 1.4: Solve the Block2 problem.
+    print('-----------------------------------------------------------------------')
+    planner = sp.Planner(make_Block_domain())
+    init, goal = make_Block2_problem()
+    plan = planner.plan(init, goal)  # <-- TODO 1.2: Implement in SymPlanner.py
+    if plan is None:
+        print("No plan found.")
+    else:
+        print("Plan:")
+        for step, act in enumerate(plan, 1):
+            print(f"{step:02d}. {act.label()}")

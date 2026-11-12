@@ -130,7 +130,7 @@ class Planner:
 
         # Setup A* over state space
         frontier = []
-        g_cost = defaultdict(np.inf)
+        g_cost = defaultdict(lambda: np.inf)
         g_cost[init_state] = 0
         # g_cost = {init_state: 0}
         parent = {init_state: (None, None)}  # parent_state + action = new_state
@@ -141,28 +141,39 @@ class Planner:
         # HINT: Refer to lecture slides for pseudocode
         FoundPath = False
         num_expansions = 0
-        visited = {init_state: True}
         while len(frontier) > 0 and num_expansions < max_expansions:
-            P = np.array(g_cost[g] + self.heuristic(set(g), goal_set) for g in frontier)
-            id = P.argmin()
+            _, cost_to_come, x = heapq.heappop(frontier)
 
-            cost_to_go, cost_to_come, x = frontier[id]
-            del frontier[id]
+            # A cheaper path may have been queued since this entry was pushed.
+            if cost_to_come > g_cost[x]:
+                continue
 
-            if self.heuristic(set(x)) == len(goal_set):
+            if self.heuristic(set(x), goal_set) == 0:
                 FoundPath = True
+                break
 
-            for action in self.applicable_actions(set(g)):
-                next_state = self.apply(set(x), action)
-                if g_cost[next_state] > (g_cost[x] + 1):
+            num_expansions = num_expansions + 1
+            for action in self.applicable_actions(x):
+                next_state = frozenset(self.apply(set(x), action))
+                if g_cost[next_state] > (cost_to_come + 1):
                     parent[next_state] = (x, action)
-                    g_cost[next_state] = g_cost[x] + 1
+                    g_cost[next_state] = cost_to_come + 1
 
-                if not next_state in visited:
-                    heapq.heappush(frontier, (x, (self.heuristic(set(x), g_cost[next_state], next_state))))
-
-                num_expansions = num_expansions + 1
-
+                    # Queue every improvement; older entries are skipped on pop.
+                    h = self.heuristic(next_state, goal_set)
+                    heapq.heappush(frontier, (g_cost[next_state] + h, g_cost[next_state], next_state))
 
 
-        return NotImplementedError
+        if FoundPath:
+            path = []
+            current = x
+
+            while parent[current][0] is not None:
+                previous, action = parent[current]
+                path.append(action)
+                current = previous
+
+            path.reverse()
+            return path
+
+        return None
